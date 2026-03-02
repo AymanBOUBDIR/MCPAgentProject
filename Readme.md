@@ -145,7 +145,7 @@ http://localhost:8080
 ### Step 10 — MCP Agent Inserts a Record via Natural Language (VSCode)
 ![MCP Insert Record](screenshots/10-mcp-insert-record..png)
 
-### Step 11 — Live Dashboard: Groq AI (LLaMA 3.3 70B) via Express API — 22 Queries Run, Sorting by Last Name
+### Step 11 — Live Dashboard: Groq AI (LLaMA 3.3 70B) via Express API — 28 Queries Run,
 > Natural language → Groq generates SQL → Express backend executes on Supabase → Results rendered live
 ![Dashboard Sort Query](screenshots/11-dashboard-sort-query.png)
 
