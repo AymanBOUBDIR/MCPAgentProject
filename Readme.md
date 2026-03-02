@@ -127,7 +127,7 @@ http://localhost:8080
 ### Step 4 — Data Inserted Successfully
 ![SQL Success](screenshots/04-sql-success.png)
 
-### Step 5 — Customers Table with Moroccan Data
+### Step 5 — Customers Table with customers Data
 ![Customers Table](screenshots/05-customers-table.png)
 
 ### Step 6 — MCP Server Connected in VSCode
