@@ -190,7 +190,7 @@ Once running, try asking the AI agent:
 
 ## 👨‍💻 Author
 
-**Ayman BOUBDIR**  · 2025
+**Ayman BOUBDIR**  · 2026
 
 ---
 
