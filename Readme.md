@@ -8,7 +8,7 @@
 
 ## 📌 Overview
 
-**MCP Copilot** is a mini project that demonstrates the concept of an **AI Agent** using the **Model Context Protocol (MCP)**. It allows you to query a real PostgreSQL database hosted on Supabase using natural language — no SQL knowledge required.
+**MCP agent** is a mini project that demonstrates the concept of an **AI Agent** using the **Model Context Protocol (MCP)**. It allows you to query a real PostgreSQL database hosted on Supabase using natural language — no SQL knowledge required.
 
 The AI (powered by **Groq / LLaMA 3.3 70B**) translates your plain English questions into SQL, executes them on Supabase, and explains the results in a clean web dashboard.
 
