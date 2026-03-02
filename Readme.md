@@ -1,4 +1,4 @@
-# 🤖 MCP Copilot — AI Database Agent
+# 🤖 MCP AI Agent/Database 
 
 > Talk to your database in plain language using **Groq AI + Supabase + MCP Protocol**
 
@@ -153,7 +153,7 @@ http://localhost:8080
 
 ## 🔌 MCP Server Configuration (VSCode)
 
-The project also includes a VSCode MCP server config that connects AI assistants (Copilot, Blackbox) directly to your Supabase database:
+The project also includes a VSCode MCP server config that connects AI assistants (Copilot) directly to your Supabase database:
 
 ```json
 {
