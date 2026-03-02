@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MCP Copilot — AI Database Agent</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #080c10;
+    --surface: #0d1117;
+    --card: #111820;
+    --border: #1e2d3d;
+    --accent: #00e5a0;
+    --accent2: #00aaff;
+    --accent3: #ff6b35;
+    --text: #e0eaf4;
+    --muted: #5a7a96;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .orb { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; opacity: 0.15; }
+  .orb-1 { width: 500px; height: 500px; background: var(--accent); top: -200px; right: -100px; }
+  .orb-2 { width: 400px; height: 400px; background: var(--accent2); bottom: -100px; left: -100px; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  header {
+    padding: 28px 0 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    position: relative; z-index: 1;
+  }
+
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .logo-text { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo-text span { color: var(--accent); }
+
+  .status-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(0,229,160,0.08); border: 1px solid rgba(0,229,160,0.2);
+    border-radius: 20px; padding: 6px 14px;
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+  }
+  .status-dot { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+  .hero { padding: 50px 0 30px; text-align: center; animation: fadeUp 0.6s ease both; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(0,170,255,0.08); border: 1px solid rgba(0,170,255,0.2);
+    border-radius: 4px; padding: 4px 12px;
+    font-family: var(--mono); font-size: 11px; color: var(--accent2);
+    letter-spacing: 1px; margin-bottom: 20px;
+  }
+
+  h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 800; line-height: 1.05; letter-spacing: -2px; margin-bottom: 16px; }
+  h1 .highlight { background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero-sub { color: var(--muted); font-size: 16px; max-width: 480px; margin: 0 auto; line-height: 1.6; }
+
+  /* Arch */
+  .arch { display: flex; align-items: center; justify-content: center; gap: 0; margin: 36px 0; flex-wrap: wrap; animation: fadeUp 0.6s 0.2s ease both; }
+  .arch-node { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; text-align: center; min-width: 110px; }
+  .arch-node .node-icon { font-size: 22px; margin-bottom: 4px; }
+  .arch-node .node-label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
+  .arch-node .node-sub { font-size: 10px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+  .arch-node.active { border-color: var(--accent); background: rgba(0,229,160,0.06); }
+  .arch-node.active .node-label { color: var(--accent); }
+  .arch-arrow { padding: 0 8px; }
+  .arch-arrow span { display: block; width: 36px; height: 2px; background: linear-gradient(90deg, var(--border), var(--accent)); position: relative; }
+  .arch-arrow span::after { content:'▶'; position:absolute; right:-8px; top:-8px; font-size:10px; color:var(--accent); }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin: 0 0 28px; animation: fadeUp 0.6s 0.3s ease both; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; transition: border-color 0.3s; }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-card::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .stat-value { font-size: 36px; font-weight: 800; font-family: var(--mono); color: var(--accent); line-height: 1; margin-bottom: 6px; }
+  .stat-label { font-size: 12px; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
+
+  /* Main grid */
+  .main-grid { display: grid; grid-template-columns: 1fr 400px; gap: 20px; margin-bottom: 28px; animation: fadeUp 0.6s 0.4s ease both; }
+
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .panel-title .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+
+  .table-wrap { overflow-x: auto; max-height: 400px; overflow-y: auto; }
+  .table-wrap::-webkit-scrollbar { width: 4px; } .table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 10px 16px; text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+  tbody tr { border-bottom: 1px solid rgba(30,45,61,0.5); transition: background 0.15s; }
+  tbody tr:hover { background: rgba(0,229,160,0.04); }
+  tbody tr.highlight { background: rgba(0,229,160,0.1); animation: rowFlash 1.5s ease; }
+  @keyframes rowFlash { 0%{background:rgba(0,229,160,0.3)} 100%{background:rgba(0,229,160,0.1)} }
+  tbody td { padding: 10px 16px; font-size: 13px; font-family: var(--mono); }
+  .badge-id { display:inline-block; background:rgba(0,170,255,0.1); color:var(--accent2); border-radius:4px; padding:2px 7px; font-size:11px; }
+  .email-cell { color: var(--muted); }
+  .phone-cell { color: var(--accent); font-size: 12px; }
+
+  /* Loading row */
+  .loading-row td { text-align: center; padding: 40px; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+
+  /* Chat */
+  .chat-panel { display: flex; flex-direction: column; height: 480px; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .chat-messages::-webkit-scrollbar { width: 3px; } .chat-messages::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .msg { max-width: 92%; animation: msgIn 0.3s ease; }
+  @keyframes msgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .msg.user { align-self: flex-end; }
+  .msg.agent { align-self: flex-start; }
+  .msg-bubble { padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
+  .msg.user .msg-bubble { background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.2); border-radius: 12px 12px 2px 12px; }
+  .msg.agent .msg-bubble { background: var(--surface); border: 1px solid var(--border); font-family: var(--mono); font-size: 12px; border-radius: 12px 12px 12px 2px; }
+  .msg-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; font-family: var(--mono); letter-spacing: 0.5px; }
+
+  .sql-block { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; margin: 8px 0; font-size: 11px; color: var(--accent2); word-break: break-all; }
+
+  .mcp-tag { display:inline-flex; align-items:center; gap:4px; background:rgba(255,107,53,0.1); border:1px solid rgba(255,107,53,0.2); color:var(--accent3); border-radius:4px; padding:2px 7px; font-size:10px; font-family:var(--mono); margin-bottom:6px; }
+
+  .typing { display:flex; gap:4px; padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:12px 12px 12px 2px; width:fit-content; }
+  .typing span { width:6px; height:6px; background:var(--muted); border-radius:50%; animation:typingDot 1.4s infinite; }
+  .typing span:nth-child(2){animation-delay:0.2s} .typing span:nth-child(3){animation-delay:0.4s}
+  @keyframes typingDot { 0%,60%,100%{transform:translateY(0);opacity:0.4} 30%{transform:translateY(-6px);opacity:1} }
+
+  .error-msg { color: #ff5555; font-size: 11px; }
+
+  .quick-queries { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap; }
+  .quick-btn { background: rgba(0,229,160,0.06); border: 1px solid rgba(0,229,160,0.15); border-radius: 6px; padding: 4px 10px; color: var(--accent); font-family: var(--mono); font-size: 10px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .quick-btn:hover { background: rgba(0,229,160,0.12); border-color: var(--accent); }
+  .quick-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .chat-input-area { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: center; }
+  .chat-input { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 14px; color:var(--text); font-family:var(--mono); font-size:12px; outline:none; transition:border-color 0.2s; }
+  .chat-input:focus { border-color: var(--accent); }
+  .chat-input::placeholder { color: var(--muted); }
+  .chat-input:disabled { opacity: 0.5; }
+
+  .send-btn { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 8px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: opacity 0.2s, transform 0.1s; flex-shrink: 0; color: #000; font-weight: bold; }
+  .send-btn:hover { opacity: 0.85; }
+  .send-btn:active { transform: scale(0.95); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  footer { border-top: 1px solid var(--border); padding: 20px 0; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
+  .footer-text { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .footer-stack { display: flex; gap: 8px; align-items: center; }
+  .stack-chip { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; font-size: 10px; font-family: var(--mono); color: var(--muted); }
+
+  @media (max-width: 800px) { .main-grid{grid-template-columns:1fr} .stats{grid-template-columns:repeat(3,1fr)} h1{letter-spacing:-1px} }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="container">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🤖</div>
+      <div class="logo-text">MCP<span>Copilot</span></div>
+    </div>
+    <div class="status-pill">
+      <div class="status-dot"></div>
+      <span id="api-status">CONNECTING...</span>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="hero-tag">⚡ AI AGENT · REAL SUPABASE DATA</div>
+    <h1>Talk to your database<br>in <span class="highlight">plain language</span></h1>
+    <p class="hero-sub">Groq AI translates your questions into SQL, executes them on Supabase, and explains the results.</p>
+  </div>
+
+  <!-- Architecture -->
+  <div class="arch">
+    <div class="arch-node">
+      <div class="node-icon">💬</div>
+      <div class="node-label">You</div>
+      <div class="node-sub">natural language</div>
+    </div>
+    <div class="arch-arrow"><span></span></div>
+    <div class="arch-node active">
+      <div class="node-icon">🤖</div>
+      <div class="node-label">Groq AI</div>
+      <div class="node-sub">NL → SQL</div>
+    </div>
+    <div class="arch-arrow"><span></span></div>
+    <div class="arch-node active">
+      <div class="node-icon">⚡</div>
+      <div class="node-label">Express API</div>
+      <div class="node-sub">node.js backend</div>
+    </div>
+    <div class="arch-arrow"><span></span></div>
+    <div class="arch-node">
+      <div class="node-icon">🗄️</div>
+      <div class="node-label">Supabase</div>
+      <div class="node-sub">postgres · eu-west</div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-value" id="stat-rows">—</div>
+      <div class="stat-label">Customer Records</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-queries">0</div>
+      <div class="stat-label">AI Queries Run</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-cols">5</div>
+      <div class="stat-label">Table Columns</div>
+    </div>
+  </div>
+
+  <!-- Main grid -->
+  <div class="main-grid">
+
+    <!-- Table panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="dot"></div> customers · public schema</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--muted)" id="table-count">loading...</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>First Name</th><th>Last Name</th><th>Email</th><th>Phone</th>
+            </tr>
+          </thead>
+          <tbody id="customers-body">
+            <tr class="loading-row"><td colspan="5">⟳ Loading from Supabase...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Chat panel -->
+    <div class="panel chat-panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="dot"></div> Groq AI Agent</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--accent3)">● LIVE</div>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg agent">
+          <div class="msg-label">GROQ AI</div>
+          <div class="msg-bubble">
+            <div class="mcp-tag">🔌 SUPABASE CONNECTED</div><br>
+            Connected to <strong>MCP_project</strong>.<br>
+            Ask me anything about your customers in plain English — I'll write the SQL and run it! 🚀
+          </div>
+        </div>
+      </div>
+      <div class="quick-queries" id="quick-queries">
+        <button class="quick-btn" onclick="quickQuery('Show the last customer record')">last record</button>
+        <button class="quick-btn" onclick="quickQuery('How many customers are there?')">count all</button>
+        <button class="quick-btn" onclick="quickQuery('Show all customers with Gmail emails')">gmail users</button>
+        <button class="quick-btn" onclick="quickQuery('Who is customer number 5?')">customer #5</button>
+        <button class="quick-btn" onclick="quickQuery('Show all customers ordered by last name')">sort by name</button>
+      </div>
+      <div class="chat-input-area">
+        <input class="chat-input" id="chat-input" type="text" placeholder="Ask anything about your data..." onkeydown="if(event.key==='Enter') sendMessage()"/>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">→</button>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <div class="footer-text">MCPAgentProject · AymanBOUBDIR · 2025</div>
+    <div class="footer-stack">
+      <div class="stack-chip">Groq AI</div>
+      <div class="stack-chip">Supabase</div>
+      <div class="stack-chip">Express</div>
+      <div class="stack-chip">Docker</div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  const API = '/api'; // proxied via nginx
+  let queryCount = 0;
+  let allCustomers = [];
+
+  // ─── Load customers on start ────────────────────────────────────────────────
+  async function loadCustomers() {
+    try {
+      const res = await fetch(`${API}/customers`);
+      const { data, error } = await res.json();
+      if (error) throw new Error(error);
+      allCustomers = data;
+      renderTable(data);
+      document.getElementById('stat-rows').textContent = data.length;
+      document.getElementById('table-count').textContent = data.length + ' rows';
+    } catch (err) {
+      document.getElementById('customers-body').innerHTML = `<tr class="loading-row"><td colspan="5" class="error-msg">⚠ ${err.message}</td></tr>`;
+    }
+  }
+
+  // ─── Health check ────────────────────────────────────────────────────────────
+  async function checkHealth() {
+    try {
+      const res = await fetch(`${API}/health`);
+      const data = await res.json();
+      if (data.status === 'ok') {
+        document.getElementById('api-status').textContent = 'API CONNECTED · LIVE';
+      }
+    } catch {
+      document.getElementById('api-status').textContent = 'API OFFLINE';
+    }
+  }
+
+  // ─── Render table ────────────────────────────────────────────────────────────
+  function renderTable(data, highlightIds = []) {
+    const tbody = document.getElementById('customers-body');
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `<tr class="loading-row"><td colspan="5">No results found</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = data.map(c => `
+      <tr id="row-${c.customer_id}" class="${highlightIds.includes(c.customer_id) ? 'highlight' : ''}">
+        <td><span class="badge-id">${c.customer_id}</span></td>
+        <td>${c.first_name}</td>
+        <td>${c.last_name}</td>
+        <td class="email-cell">${c.email}</td>
+        <td class="phone-cell">${c.phone_number || '—'}</td>
+      </tr>
+    `).join('');
+    document.getElementById('table-count').textContent = data.length + ' rows';
+  }
+
+  // ─── Chat helpers ────────────────────────────────────────────────────────────
+  function addMsg(role, html) {
+    const chat = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    div.innerHTML = `<div class="msg-label">${role === 'user' ? 'YOU' : 'GROQ AI'}</div><div class="msg-bubble">${html}</div>`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function showTyping() {
+    const chat = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.id = 'typing-indicator';
+    div.className = 'msg agent';
+    div.innerHTML = `<div class="msg-label">GROQ AI</div><div class="typing"><span></span><span></span><span></span></div>`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function hideTyping() {
+    document.getElementById('typing-indicator')?.remove();
+  }
+
+  function setLoading(on) {
+    document.getElementById('send-btn').disabled = on;
+    document.getElementById('chat-input').disabled = on;
+    document.querySelectorAll('.quick-btn').forEach(b => b.disabled = on);
+  }
+
+  // ─── Send message ────────────────────────────────────────────────────────────
+  async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const q = input.value.trim();
+    if (!q) return;
+    input.value = '';
+
+    addMsg('user', q);
+    showTyping();
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API}/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q })
+      });
+
+      const data = await res.json();
+      hideTyping();
+
+      if (data.error && !data.rows) {
+        addMsg('agent', `<span class="error-msg">⚠ ${data.error}</span>`);
+      } else {
+        queryCount++;
+        document.getElementById('stat-queries').textContent = queryCount;
+
+        // Show SQL
+        let html = `<div class="mcp-tag">⚡ Execute SQL</div>`;
+        html += `<div class="sql-block">${data.sql}</div>`;
+
+        // Show summary
+        if (data.summary) html += `${data.summary}`;
+
+        // Update table if rows returned
+        if (data.rows && data.rows.length > 0) {
+          const ids = data.rows.map(r => r.customer_id).filter(Boolean);
+          if (ids.length > 0 && ids.length < allCustomers.length) {
+            renderTable(data.rows, ids);
+          } else if (ids.length === allCustomers.length) {
+            renderTable(allCustomers);
+          }
+          html += `<br><br><span style="color:var(--accent);font-size:11px">↑ Table updated · ${data.rows.length} row(s)</span>`;
+        }
+
+        addMsg('agent', html);
+      }
+    } catch (err) {
+      hideTyping();
+      addMsg('agent', `<span class="error-msg">⚠ Network error: ${err.message}</span>`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function quickQuery(q) {
+    document.getElementById('chat-input').value = q;
+    sendMessage();
+  }
+
+  // ─── Init ────────────────────────────────────────────────────────────────────
+  checkHealth();
+  loadCustomers();
+</script>
+</body>
+</html>
